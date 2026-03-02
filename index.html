@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="theme-color" content="#6d28d9"/>
+<title>AXcelerate Productivity Hub</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',sans-serif;background:#0f0a1e;color:#f3f0ff;min-height:100vh}
+:root{
+  --bg:#0f0a1e;--card:#1a1130;--border:#2d1f4e;
+  --primary:#8b5cf6;--pd:#6d28d9;--pl:#a78bfa;
+  --accent:#c4b5fd;--text:#f3f0ff;--sub:#9d8ec7;
+  --ok:#10b981;--warn:#f59e0b;--err:#ef4444;
+}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-size:14px;width:100%;outline:none;font-family:inherit}
+textarea{resize:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+.btn{background:linear-gradient(135deg,var(--pd),var(--primary));color:var(--text);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--sub)}
+.btn.sm{padding:5px 11px;font-size:12px}
+.btn.full{width:100%;justify-content:center}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center}
+.tag{border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sub{font-size:12px;color:var(--sub)}
+#header{background:linear-gradient(135deg,var(--pd),var(--primary));padding:16px 16px 12px;position:sticky;top:0;z-index:100}
+#header h1{font-size:18px;font-weight:800}
+#nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:100}
+.navbtn{flex:1;padding:10px 0;background:none;border:none;color:var(--sub);font-size:10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:400}
+.navbtn.active{color:var(--pl);font-weight:700}
+.navbtn .ico{font-size:20px}
+#content{max-width:900px;margin:0 auto;padding:14px 14px 80px}
+.pane{display:none}
+.pane.active{display:block}
+.progbar{background:var(--border);border-radius:99px;height:8px;overflow:hidden}
+.progfill{height:100%;border-radius:99px;transition:width .5s}
+.timer-wrap{display:flex;justify-content:center;margin:20px 0}
+.timer-circle{position:relative;width:180px;height:180px}
+.timer-circle svg{transform:rotate(-90deg)}
+.timer-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.barchart{display:flex;gap:6px;align-items:flex-end;height:90px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;border-radius:4px;transition:height .3s}
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+#login h1{font-size:24px;font-weight:800;margin:12px 0 4px;text-align:center}
+.chip{background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:5px 14px;font-size:12px;color:var(--sub);cursor:pointer}
+.chip.active{border-color:var(--primary);color:var(--pl)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.task-card{border-radius:14px;padding:12px 14px;margin-bottom:8px;background:var(--card)}
+.ai-resp{white-space:pre-wrap;line-height:1.7;font-size:13px}
+#stale-alert{display:none;border:1px solid var(--err);background:#1a0a0a;border-radius:14px;padding:14px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div style="font-size:56px">🚀</div>
+  <h1>AXcelerate<br/>Productivity Hub</h1>
+  <p style="color:var(--sub);margin:8px 0 28px;text-align:center;font-size:14px">Your personal productivity workspace</p>
+  <input id="nameInput" type="text" placeholder="Enter your name to continue..." maxlength="30" style="max-width:320px;margin-bottom:10px;font-size:16px;text-align:center"/>
+  <button class="btn full" onclick="doLogin()" style="max-width:320px;font-size:16px;padding:14px;justify-content:center">Let's Go →</button>
+  <p style="color:var(--sub);font-size:11px;margin-top:16px;text-align:center">🔒 Your data stays private on this device only</p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div id="header">
+    <div class="row">
+      <div style="flex:1">
+        <h1>🚀 AXcelerate Hub</h1>
+        <div id="hdrDate" style="font-size:12px;color:var(--accent);margin-top:2px"></div>
+      </div>
+      <div id="hdrStats" style="text-align:right;font-size:12px;color:var(--accent)"></div>
+      <button class="btn ghost sm" onclick="logout()" style="margin-left:8px;font-size:11px">Switch</button>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- TASKS -->
+    <div id="pane-tasks" class="pane active">
+      <div id="stale-alert">
+        <p style="font-weight:700;color:var(--err);margin-bottom:6px">🛡️ Procrastination Shield — tasks stuck 3+ days!</p>
+        <div id="stale-list"></div>
+        <p class="sub" style="margin-top:6px;color:var(--err)">Use 🤖 AI → Buster to fix them!</p>
+      </div>
+      <div class="filters" id="catFilters"></div>
+      <div class="filters" id="prioFilters"></div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn ghost sm" id="toggleDoneBtn" onclick="toggleShowDone()">⭕ Pending</button>
+        <button class="btn sm full" onclick="toggleAddForm()" id="addToggleBtn">➕ Add Task</button>
+      </div>
+      <div id="addForm" class="card" style="display:none;border-color:var(--primary);margin-bottom:12px">
+        <input id="f-title" placeholder="Task title *" style="margin-bottom:8px"/>
+        <div class="grid2" style="margin-bottom:8px">
+          <select id="f-cat"></select>
+          <select id="f-prio"><option>High</option><option selected>Medium</option><option>Low</option></select>
+        </div>
+        <input id="f-due" type="date" style="margin-bottom:8px"/>
+        <textarea id="f-notes" placeholder="Notes (optional)" style="height:56px;margin-bottom:8px"></textarea>
+        <button class="btn full" onclick="addTask()">✅ Save Task</button>
+      </div>
+      <div id="taskList"></div>
+    </div>
+
+    <!-- TIMER -->
+    <div id="pane-timer" class="pane">
+      <div class="filters" style="justify-content:center;margin-bottom:4px">
+        <button class="chip active" onclick="setTimerMode('pomodoro',this)">🍅 25m</button>
+        <button class="chip" onclick="setTimerMode('short',this)">☕ 5m</button>
+        <button class="chip" onclick="setTimerMode('long',this)">🧘 15m</button>
+      </div>
+      <div class="timer-wrap">
+        <div class="timer-circle">
+          <svg width="180" height="180">
+            <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border)" stroke-width="10"/>
+            <circle id="timerArc" cx="90" cy="90" r="80" fill="none" stroke="var(--primary)" stroke-width="10"
+              stroke-dasharray="502.7" stroke-dashoffset="502.7" stroke-linecap="round" style="transition:stroke-dashoffset .5s"/>
+          </svg>
+          <div class="timer-inner">
+            <div id="timerDisplay" style="font-size:40px;font-weight:700">25:00</div>
+            <div id="timerLabel" class="sub" style="text-transform:capitalize">pomodoro</div>
+          </div>
+        </div>
+      </div>
+      <select id="timerTask" style="margin-bottom:12px"><option value="">— Focus on a task —</option></select>
+      <div class="row" style="justify-content:center;gap:10px;margin-bottom:16px">
+        <button class="btn" id="timerStartBtn" onclick="timerToggle()" style="padding:12px 32px;font-size:16px">▶ Start</button>
+        <button class="btn ghost" onclick="timerReset()">🔄 Reset</button>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="sub" style="margin-bottom:4px">Sessions completed</div>
+        <div id="sessionCount" style="font-size:36px;font-weight:700;color:var(--pl)">0 🍅</div>
+        <div id="focusMin" class="sub" style="margin-top:4px">0 mins of deep work</div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="pane-analytics" class="pane">
+      <div class="grid3" id="summaryCards" style="margin-bottom:12px"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="row" style="margin-bottom:6px">
+          <span style="font-size:13px;font-weight:600">Overall Progress</span>
+          <span id="pctLabel" style="margin-left:auto;color:var(--pl);font-weight:700">0%</span>
+        </div>
+        <div class="progbar"><div id="mainProg" class="progfill" style="width:0%;background:linear-gradient(90deg,var(--pd),var(--pl))"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <p style="font-weight:600;margin-bottom:12px;color:var(--accent)">📅 Last 7 Days</p>
+        <div class="barchart" id="barChart"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <p style="font-weight:600;margin-bottom:10px;color:var(--accent)">By Category</p>
+        <div id="catStats"></div>
+      </div>
+      <div class="card">
+        <p style="font-weight:600;margin-bottom:10px;color:var(--accent)">By Priority</p>
+        <div class="grid3" id="prioStats"></div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div id="pane-ai" class="pane">
+      <div class="card" style="border-color:var(--primary);background:linear-gradient(135deg,#2a1060,var(--card));margin-bottom:12px">
+        <p style="font-weight:700;color:var(--pl);margin-bottom:4px">🤖 AI Productivity Coach</p>
+        <p class="sub">Powered by Claude AI · Personal & private</p>
+      </div>
+      <div class="grid3" id="aiModes" style="margin-bottom:12px"></div>
+      <div id="busterAlert" class="card" style="display:none;border-color:var(--err);background:#1a0a0a;margin-bottom:8px">
+        <p id="busterAlertText" style="color:var(--err);font-weight:600;font-size:13px"></p>
+        <p class="sub" style="margin-top:4px;color:var(--err);font-size:11px">AI breaks them into 5-min micro-tasks!</p>
+      </div>
+      <textarea id="aiPrompt" placeholder="Type here..." style="height:70px;margin-bottom:8px"></textarea>
+      <button class="btn full" onclick="runAI()" id="aiRunBtn" style="margin-bottom:12px;font-size:15px">✨ Run AI</button>
+      <div id="aiLoading" style="display:none;text-align:center;padding:20px">
+        <div style="font-size:40px">🤖</div>
+        <p class="sub" style="margin-top:8px">Claude is thinking...</p>
+      </div>
+      <div id="aiResponse" style="display:none" class="card">
+        <p style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:8px">🤖 AI Response</p>
+        <div id="aiRespText" class="ai-resp"></div>
+      </div>
+      <div id="aiGenerated"></div>
+    </div>
+  </div>
+
+  <nav id="nav">
+    <button class="navbtn active" onclick="switchTab('tasks')" id="nt-tasks"><span class="ico">📋</span>Tasks</button>
+    <button class="navbtn" onclick="switchTab('timer')" id="nt-timer"><span class="ico">⏱️</span>Timer</button>
+    <button class="navbtn" onclick="switchTab('analytics')" id="nt-analytics"><span class="ico">📊</span>Analytics</button>
+    <button class="navbtn" onclick="switchTab('ai')" id="nt-ai"><span class="ico">🤖</span>AI</button>
+  </nav>
+</div>
+
+<script>
+const CATS=["D365 Training","Student Management","Business/Admin","Personal"];
+const CAT_C=["#8b5cf6","#06b6d4","#f59e0b","#10b981"];
+const PRIOS=["High","Medium","Low"];
+const PRIO_C={High:"#ef4444",Medium:"#f59e0b",Low:"#10b981"};
+const TDUR={pomodoro:25*60,short:5*60,long:15*60};
+
+let user=null,tasks=[],showDone=false,filterCat="All",filterPrio="All";
+let timerMode="pomodoro",timerLeft=25*60,timerRun=false,timerInt=null,sessions=0;
+let aiMode="suggest";
+
+const sk=k=>`axp_${user}_${k}`;
+const sv=(k,v)=>{try{localStorage.setItem(sk(k),JSON.stringify(v))}catch(e){}};
+const ld=(k,d)=>{try{const v=localStorage.getItem(sk(k));return v!=null?JSON.parse(v):d}catch(e){return d}};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function doLogin(){
+  const n=document.getElementById('nameInput').value.trim();
+  if(!n)return;
+  user=n; localStorage.setItem('axp_lastUser',n); startApp();
+}
+function logout(){
+  user=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  document.getElementById('nameInput').value='';
+}
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function startApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  tasks=ld('tasks',[]);
+  sessions=ld('sessions',0);
+  buildCatSelect(); buildFilters(); buildAIModes();
+  renderTasks(); updateHeader(); updateSessionUI();
+  setInterval(updateHeader,60000);
+}
+
+window.addEventListener('load',()=>{
+  const last=localStorage.getItem('axp_lastUser');
+  if(last){document.getElementById('nameInput').value=last;}
+});
+
+function updateHeader(){
+  if(!user)return;
+  const d=new Date();
+  document.getElementById('hdrDate').textContent=
+    d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})+' · Hi, '+user+'!';
+  const pending=tasks.filter(t=>!t.done).length;
+  const streak=calcStreak();
+  document.getElementById('hdrStats').innerHTML=`${pending} pending · 🔥 ${streak}d streak`;
+}
+
+function calcStreak(){
+  const days=new Set(tasks.filter(t=>t.done&&t.doneAt).map(t=>new Date(t.doneAt).toDateString()));
+  let s=0,d=new Date();
+  while(days.has(d.toDateString())){s++;d.setDate(d.getDate()-1);}
+  return s;
+}
+
+const TABS=['tasks','timer','analytics','ai'];
+function switchTab(t){
+  TABS.forEach(x=>{
+    document.getElementById('pane-'+x).classList.toggle('active',x===t);
+    const nb=document.getElementById('nt-'+x);if(nb)nb.classList.toggle('active',x===t);
+  });
+  if(t==='analytics')renderAnalytics();
+  if(t==='tasks')renderTasks();
+  if(t==='timer')populateTimerTasks();
+}
+
+function buildCatSelect(){
+  document.getElementById('f-cat').innerHTML=CATS.map(c=>`<option>${c}</option>`).join('');
+}
+function buildFilters(){
+  document.getElementById('catFilters').innerHTML=['All',...CATS].map(c=>
+    `<button class="chip${filterCat===c?' active':''}" onclick="setCatFilter('${c}',this)">${c==='All'?'🗂 All':c.split(' ')[0]}</button>`
+  ).join('');
+  document.getElementById('prioFilters').innerHTML=['All',...PRIOS].map(p=>
+    `<button class="chip${filterPrio===p?' active':''}" onclick="setPrioFilter('${p}',this)">${p}</button>`
+  ).join('');
+}
+function setCatFilter(c,el){filterCat=c;document.querySelectorAll('#catFilters .chip').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderTasks();}
+function setPrioFilter(p,el){filterPrio=p;document.querySelectorAll('#prioFilters .chip').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderTasks();}
+function toggleShowDone(){showDone=!showDone;document.getElementById('toggleDoneBtn').textContent=showDone?'✅ Done':'⭕ Pending';renderTasks();}
+function toggleAddForm(){const f=document.getElementById('addForm');const open=f.style.display==='none';f.style.display=open?'block':'none';document.getElementById('addToggleBtn').textContent=open?'✕ Cancel':'➕ Add Task';}
+
+let _uid=Date.now();
+const nextId=()=>(++_uid).toString();
+
+function addTask(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title)return;
+  tasks.unshift({id:nextId(),title,cat:document.getElementById('f-cat').value,prio:document.getElementById('f-prio').value,due:document.getElementById('f-due').value,notes:document.getElementById('f-notes').value,done:false,createdAt:Date.now()});
+  sv('tasks',tasks);
+  document.getElementById('f-title').value='';
+  document.getElementById('f-notes').value='';
+  document.getElementById('f-due').value='';
+  toggleAddForm(); renderTasks(); updateHeader();
+}
+function toggleTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():null;sv('tasks',tasks);renderTasks();updateHeader();}
+function delTask(id){tasks=tasks.filter(x=>x.id!==id);sv('tasks',tasks);renderTasks();updateHeader();}
+
+function addGeneratedTask(title,cat,prio,notes){
+  tasks.unshift({id:nextId(),title,cat,prio,due:'',notes,done:false,createdAt:Date.now()});
+  sv('tasks',tasks); renderTasks(); updateHeader();
+  document.querySelectorAll('#aiGenerated .gen-card').forEach(c=>{if(c.dataset.title===title)c.remove();});
+}
+
+function renderTasks(){
+  const stale=tasks.filter(t=>!t.done&&t.createdAt&&(Date.now()-t.createdAt>3*86400000));
+  const sa=document.getElementById('stale-alert');
+  if(stale.length&&!showDone){sa.style.display='block';document.getElementById('stale-list').innerHTML=stale.map(t=>`<div class="sub" style="margin-bottom:2px">⚠️ <b style="color:var(--text)">${esc(t.title)}</b> — stuck since ${new Date(t.createdAt).toLocaleDateString('en-IN')}</div>`).join('');}else sa.style.display='none';
+
+  const filtered=tasks.filter(t=>showDone?t.done:!t.done).filter(t=>filterCat==='All'||t.cat===filterCat).filter(t=>filterPrio==='All'||t.prio===filterPrio).sort((a,b)=>PRIOS.indexOf(a.prio)-PRIOS.indexOf(b.prio));
+  const list=document.getElementById('taskList');
+  if(!filtered.length){list.innerHTML=`<p class="sub" style="text-align:center;margin-top:30px">${showDone?'No completed tasks yet!':'All clear! Add a task above 🎉'}</p>`;return;}
+  list.innerHTML=filtered.map(t=>{
+    const cc=CAT_C[CATS.indexOf(t.cat)]||'#8b5cf6';
+    const pc=PRIO_C[t.prio];
+    return `<div class="task-card" style="border-left:3px solid ${cc};opacity:${t.done?.6:1}">
+      <div class="row" style="margin-bottom:6px">
+        <button onclick="toggleTask('${t.id}')" style="background:none;border:none;font-size:20px;padding:0;flex-shrink:0">${t.done?'✅':'⭕'}</button>
+        <span style="flex:1;font-size:15px;font-weight:600;text-decoration:${t.done?'line-through':'none'}">${esc(t.title)}</span>
+        <button onclick="delTask('${t.id}')" style="background:none;border:none;color:var(--err);font-size:16px">🗑️</button>
+      </div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <span class="tag" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${esc(t.cat)}</span>
+        <span class="tag" style="background:${pc}22;color:${pc};border:1px solid ${pc}44">${t.prio}</span>
+        ${t.due?`<span class="tag" style="background:#9d8ec722;color:var(--sub);border:1px solid #2d1f4e">📅 ${t.due}</span>`:''}
+      </div>
+      ${t.notes?`<p class="sub" style="margin-top:6px;font-size:12px">${esc(t.notes)}</p>`:''}
+    </div>`;
+  }).join('');
+}
+
+// TIMER
+function setTimerMode(m,el){
+  timerMode=m;timerLeft=TDUR[m];timerRun=false;clearInterval(timerInt);
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');
+  document.getElementById('timerStartBtn').textContent='▶ Start';
+  document.getElementById('timerLabel').textContent=m;
+  updateTimerDisplay();
+}
+function timerToggle(){
+  timerRun=!timerRun;
+  document.getElementById('timerStartBtn').textContent=timerRun?'⏸ Pause':'▶ Start';
+  if(timerRun){
+    timerInt=setInterval(()=>{
+      timerLeft--;
+      if(timerLeft<=0){clearInterval(timerInt);timerRun=false;sessions++;sv('sessions',sessions);document.getElementById('timerStartBtn').textContent='▶ Start';timerLeft=TDUR[timerMode];updateSessionUI();alert('🍅 Session complete! Great work!');}
+      updateTimerDisplay();
+    },1000);
+  }else clearInterval(timerInt);
+}
+function timerReset(){timerRun=false;clearInterval(timerInt);timerLeft=TDUR[timerMode];document.getElementById('timerStartBtn').textContent='▶ Start';updateTimerDisplay();}
+function updateTimerDisplay(){
+  const m=String(Math.floor(timerLeft/60)).padStart(2,'0');
+  const s=String(timerLeft%60).padStart(2,'0');
+  document.getElementById('timerDisplay').textContent=`${m}:${s}`;
+  const total=TDUR[timerMode];const pct=(total-timerLeft)/total;
+  const circ=2*Math.PI*80;
+  document.getElementById('timerArc').style.strokeDasharray=circ;
+  document.getElementById('timerArc').style.strokeDashoffset=circ*(1-pct);
+  updateSessionUI();
+}
+function updateSessionUI(){document.getElementById('sessionCount').textContent=`${sessions} 🍅`;document.getElementById('focusMin').textContent=`${sessions*25} mins of deep work!`;}
+function populateTimerTasks(){const sel=document.getElementById('timerTask');const p=tasks.filter(t=>!t.done);sel.innerHTML='<option value="">— Focus on a task —</option>'+p.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join('');}
+
+// ANALYTICS
+function renderAnalytics(){
+  const done=tasks.filter(t=>t.done),pending=tasks.filter(t=>!t.done),total=tasks.length;
+  const pct=total?Math.round((done.length/total)*100):0;
+  document.getElementById('pctLabel').textContent=pct+'%';
+  document.getElementById('mainProg').style.width=pct+'%';
+  document.getElementById('summaryCards').innerHTML=[{l:'Total',v:total,i:'📋'},{l:'Done',v:done.length,i:'✅'},{l:'Pending',v:pending.length,i:'⭕'}].map(x=>`<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px;text-align:center"><div style="font-size:22px">${x.i}</div><div style="font-size:26px;font-weight:700;color:var(--pl)">${x.v}</div><div class="sub">${x.l}</div></div>`).join('');
+  const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return{day:d.toLocaleDateString('en-IN',{weekday:'short'}),count:tasks.filter(t=>t.done&&t.doneAt&&new Date(t.doneAt).toDateString()===d.toDateString()).length};});
+  const maxDay=Math.max(...last7.map(d=>d.count),1);
+  document.getElementById('barChart').innerHTML=last7.map(d=>`<div class="bar-col"><div class="bar" style="background:${d.count>0?'var(--primary)':'var(--border)'};height:${Math.max((d.count/maxDay)*65,4)}px"></div><span style="font-size:10px;color:var(--sub)">${d.day}</span>${d.count>0?`<span style="font-size:10px;color:var(--pl);font-weight:700">${d.count}</span>`:''}</div>`).join('');
+  document.getElementById('catStats').innerHTML=CATS.map((c,i)=>{const cc=CAT_C[i];const tot=tasks.filter(t=>t.cat===c).length;const dn=tasks.filter(t=>t.cat===c&&t.done).length;const p=tot?Math.round((dn/tot)*100):0;return `<div style="margin-bottom:8px"><div class="row" style="margin-bottom:3px"><span class="sub" style="flex:1;font-size:12px">${c}</span><span style="font-size:12px;color:${cc};font-weight:600">${dn}/${tot}</span></div><div class="progbar"><div class="progfill" style="width:${p}%;background:${cc}"></div></div></div>`;}).join('');
+  document.getElementById('prioStats').innerHTML=PRIOS.map(p=>{const pc=PRIO_C[p];const tot=tasks.filter(t=>t.prio===p).length;const dn=tasks.filter(t=>t.prio===p&&t.done).length;return `<div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;border:1px solid ${pc}44"><div style="font-size:20px;font-weight:700;color:${pc}">${dn}</div><div class="sub" style="font-size:10px">done</div><div style="font-size:11px;color:${pc};font-weight:600;margin-top:2px">${p}</div><div class="sub" style="font-size:10px">${tot} total</div></div>`;}).join('');
+}
+
+// AI
+const AI_MODES=[{id:'suggest',label:'💡 Suggest'},{id:'prioritize',label:'🎯 Prioritize'},{id:'plan',label:'📅 Day Plan'},{id:'buster',label:'🛡️ Buster'},{id:'chat',label:'💬 Chat'}];
+function buildAIModes(){document.getElementById('aiModes').innerHTML=AI_MODES.map(m=>`<button class="btn ${m.id===aiMode?'':'ghost'} sm" onclick="setAIMode('${m.id}',this)" style="justify-content:center;font-size:12px">${m.label}</button>`).join('');}
+function setAIMode(m,el){
+  aiMode=m;
+  document.querySelectorAll('#aiModes button').forEach(b=>{b.classList.remove('btn');b.classList.add('ghost');});
+  el.classList.remove('ghost');el.classList.add('btn');
+  document.getElementById('aiResponse').style.display='none';
+  document.getElementById('aiGenerated').innerHTML='';
+  const stale=tasks.filter(t=>!t.done&&t.createdAt&&(Date.now()-t.createdAt>3*86400000));
+  const ba=document.getElementById('busterAlert');
+  if(m==='buster'&&stale.length){ba.style.display='block';document.getElementById('busterAlertText').textContent=`🛡️ ${stale.length} stuck task(s): ${stale.map(t=>t.title).join(', ')}`;}else ba.style.display='none';
+  const ph={suggest:'e.g. preparing D365 module, new student batch...',plan:'Any extra context for your day?',chat:'Ask me anything...',prioritize:'',buster:''};
+  const ap=document.getElementById('aiPrompt');
+  ap.placeholder=ph[m]||'Type here...';
+  ap.style.display=(m==='prioritize'||m==='buster')?'none':'block';
+}
+
+async function runAI(){
+  const prompt=document.getElementById('aiPrompt').value;
+  const pending=tasks.filter(t=>!t.done);
+  const stale=tasks.filter(t=>!t.done&&t.createdAt&&(Date.now()-t.createdAt>3*86400000));
+  const taskList=pending.map(t=>`- [${t.prio}] ${t.title} (${t.cat})${t.due?' due '+t.due:''}`).join('\n')||'No pending tasks.';
+  let system='',userMsg='';
+  if(aiMode==='suggest'){system=`You are a productivity coach for ${user}, a D365 F&O consultant who runs AXcelerate Power training institute in India. Respond ONLY with a JSON array: [{"title":"...","cat":"...","prio":"...","notes":"..."}]. Categories: ${CATS.join(', ')}. Priorities: High, Medium, Low. 4-5 tasks. Pure JSON only.`;userMsg=`Context: ${prompt||'general D365 training and institute tasks'}`;}
+  else if(aiMode==='prioritize'){system=`You are a productivity coach. Rank these tasks for today with brief reasoning. Be motivating.`;userMsg=`My pending tasks:\n${taskList}`;}
+  else if(aiMode==='plan'){system=`You are a productivity coach for ${user}, D365 consultant & training institute owner. Create a time-blocked day plan. Be concise.`;userMsg=`Day plan. Tasks:\n${taskList}${prompt?'\nExtra: '+prompt:''}`;}
+  else if(aiMode==='buster'){if(!stale.length){showAIResp('🎉 No stuck tasks! You are on top of everything!');return;}system=`You are a procrastination coach. Break each stuck task into 3-4 micro-tasks under 10 minutes. Respond ONLY with JSON: [{"original":"...","microtasks":[{"title":"...","cat":"...","prio":"High","notes":"~5 min"}]}]. Pure JSON only.`;userMsg=`Stuck tasks:\n${stale.map(t=>`- ${t.title} (${t.cat})`).join('\n')}`;}
+  else{system=`You are a helpful productivity assistant for ${user}, a D365 F&O consultant and training institute owner in India. Be concise.`;userMsg=prompt||'Give me a productivity tip.';}
+
+  document.getElementById('aiLoading').style.display='block';
+  document.getElementById('aiResponse').style.display='none';
+  document.getElementById('aiGenerated').innerHTML='';
+  document.getElementById('aiRunBtn').disabled=true;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:userMsg}]})});
+    const data=await res.json();
+    const text=data.content?.map(b=>b.text||'').join('')||'No response.';
+    if(aiMode==='suggest'){try{const arr=JSON.parse(text.replace(/```json|```/g,'').trim());showAIResp('Here are your AI-suggested tasks — tap ➕ to add:');showGenerated(arr);}catch{showAIResp(text);}}
+    else if(aiMode==='buster'){try{const arr=JSON.parse(text.replace(/```json|```/g,'').trim());const micro=arr.flatMap(g=>g.microtasks||[]);showAIResp(`🛡️ Broke ${stale.length} stuck task(s) into ${micro.length} micro-tasks:`);showGenerated(micro);}catch{showAIResp(text);}}
+    else showAIResp(text);
+  }catch(e){showAIResp('⚠️ Could not connect to AI. Check internet and try again.');}
+  document.getElementById('aiLoading').style.display='none';
+  document.getElementById('aiRunBtn').disabled=false;
+}
+
+function showAIResp(text){document.getElementById('aiLoading').style.display='none';document.getElementById('aiResponse').style.display='block';document.getElementById('aiRespText').textContent=text;}
+function showGenerated(arr){
+  document.getElementById('aiGenerated').innerHTML=arr.map(t=>{
+    const cc=CAT_C[CATS.indexOf(t.cat)]||'#8b5cf6';const pc=PRIO_C[t.prio]||'#f59e0b';
+    const safeTitle=esc(t.title);const safeCat=esc(t.cat||CATS[0]);const safePrio=esc(t.prio||'Medium');const safeNotes=esc(t.notes||'');
+    return `<div class="task-card gen-card" data-title="${safeTitle}" style="border-left:3px solid ${cc}">
+      <div class="row"><div style="flex:1">
+        <p style="font-weight:600;font-size:14px;margin-bottom:4px">${safeTitle}</p>
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          <span class="tag" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${safeCat}</span>
+          <span class="tag" style="background:${pc}22;color:${pc};border:1px solid ${pc}44">${safePrio}</span>
+        </div>
+        ${t.notes?`<p class="sub" style="margin-top:4px;font-size:11px">${safeNotes}</p>`:''}
+      </div>
+      <button class="btn sm" style="margin-left:8px;flex-shrink:0"
+        onclick="addGeneratedTask(${JSON.stringify(t.title)},${JSON.stringify(t.cat||CATS[0])},${JSON.stringify(t.prio||'Medium')},${JSON.stringify(t.notes||'')})">➕ Add</button>
+      </div></div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
